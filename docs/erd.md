@@ -9,7 +9,7 @@ erDiagram
     COURSE ||--o{ LESSON : "contains"
     LESSON ||--o{ NOTE : "has notes"
     USER ||--o{ NOTE : "authors"
-    NOTE ||--o{ AUDIO_RECORDING : "has"
+    LESSON ||--o{ AUDIO_RECORDING : "has recordings"
     USER ||--o{ AUDIO_RECORDING : "uploads"
     AUDIO_RECORDING ||--o{ TRANSCRIPTION_JOB : "processed by"
     TRANSCRIPTION_JOB ||--o| TRANSCRIPTION : "produces"
@@ -55,7 +55,7 @@ erDiagram
     }
     AUDIO_RECORDING {
         bigint id PK
-        bigint note_id FK
+        bigint lesson_id FK
         bigint uploaded_by FK
         string file_path
         string file_format
