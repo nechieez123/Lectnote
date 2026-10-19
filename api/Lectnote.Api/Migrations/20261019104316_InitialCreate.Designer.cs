@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lectnote.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261018223916_InitialCreate")]
+    [Migration("20261019104316_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,20 +28,24 @@ namespace Lectnote.Api.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_study_groups");
 
-                    b.ToTable("StudyGroups");
+                    b.ToTable("study_groups", (string)null);
                 });
 #pragma warning restore 612, 618
         }
