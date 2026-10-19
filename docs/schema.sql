@@ -40,7 +40,7 @@ CREATE TABLE notes (
 
 CREATE TABLE audio_recordings (
     id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    note_id       BIGINT NOT NULL REFERENCES notes(id),
+    lesson_id     BIGINT NOT NULL REFERENCES lessons(id),              -- UC-04: audio is uploaded for a lesson
     uploaded_by   BIGINT NOT NULL REFERENCES users(id),
     file_path     VARCHAR(500) NOT NULL,
     file_format   VARCHAR(10) NOT NULL,                  -- accepted formats: D-01
