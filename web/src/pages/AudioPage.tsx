@@ -1,0 +1,12 @@
+import { AudioLines, CircleAlert, Clock3, FileAudio2, ShieldAlert } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import { demoAudioJobs } from '../data/demo';
+import type { TranscriptionStatus } from '../types';
+
+const statusLabels: Record<TranscriptionStatus, string> = { Pending: 'Em processamento', Completed: 'Concluída', Failed: 'Falhou' };
+const statusIcons = { Pending: Clock3, Completed: AudioLines, Failed: CircleAlert };
+
+export default function AudioPage() {
+  return <><PageHeader eyebrow="RF-04 · RF-05 · UC-04 · UC-05" title="Áudio e transcrições" description="Acompanha o estado das gravações das aulas." /><div className="decision-card"><span className="decision-icon"><ShieldAlert size={19} /></span><div><strong>Upload real aguardando decisão do modelo</strong><p>D-01 ainda não define formatos aceites nem tamanho máximo. Por isso, esta página mostra apenas exemplos e não envia ficheiros.</p></div><span className="decision-tag">PENDENTE</span></div><section className="surface-card jobs-card"><div className="section-heading"><div><p className="section-eyebrow">DADOS DE DEMONSTRAÇÃO</p><h2>Trabalhos de transcrição</h2></div><span className="readonly-label">Só leitura</span></div>{demoAudioJobs.length ? <div className="jobs-list">{demoAudioJobs.map((job) => { const Icon = statusIcons[job.status]; return <article className="job-row" key={job.id}><span className={`job-icon job-${job.status.toLowerCase()}`}><FileAudio2 size={18} /></span><div className="job-main"><strong>{job.lessonTitle}</strong><span>{job.fileName} · {new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(job.createdAt))}</span>{job.status === 'Failed' && job.errorMessage && <small className="job-error">{job.errorMessage}</small>}</div><span className={`status-pill status-${job.status.toLowerCase()}`}><Icon size={14} />{statusLabels[job.status]}</span></article>; })}</div> : <EmptyState icon={<AudioLines size={23} />} title="Sem gravações" description="Quando houver gravações, o estado da transcrição aparecerá aqui." />}</section><div className="info-banner info-banner-soft"><span className="info-banner-mark">i</span><p>As ações de reenvio e notificação em caso de falha também aguardam a decisão D-02. Nenhum ficheiro é carregado nem persistido nesta demonstração.</p></div></>;
+}

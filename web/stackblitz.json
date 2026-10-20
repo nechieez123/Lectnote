@@ -1,0 +1,5 @@
+{
+  "startCommand": "npm run dev",
+  "installDependencies": true,
+  "description": "Lectnote — frontend académico React + TypeScript"
+}
