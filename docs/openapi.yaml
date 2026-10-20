@@ -1,0 +1,1094 @@
+openapi: 3.0.3
+info:
+  title: Lectnote API
+  version: 0.1.0
+  description: |
+    Draft contracts for the Lectnote REST API (see docs/api-contracts.md).
+    Endpoints marked PENDING depend on a decision (D-xx) from docs/business-rules.md.
+servers:
+  - url: http://localhost:5000
+    description: Local development
+tags:
+  - name: Health
+  - name: Auth
+  - name: Courses and lessons
+  - name: Notes
+  - name: Audio and transcription
+  - name: Blocks
+  - name: Sharing
+  - name: Comments
+  - name: Notifications
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/hello:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: The API is running and can read the database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Hello from Lectnote API
+                  studyGroups:
+                    type: integer
+                    example: 0
+
+  /api/study-groups:
+    get:
+      tags: [Auth]
+      summary: List study groups (used by the registration form)
+      security: []
+      responses:
+        "200":
+          description: Study groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudyGroup"
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a student (UC-01)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: E-mail already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in (UC-01)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out (UC-01)
+      responses:
+        "204":
+          description: Session invalidated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/courses:
+    get:
+      tags: [Courses and lessons]
+      summary: List courses of the user's study group (UC-02)
+      responses:
+        "200":
+          description: Courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The user has no study group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags: [Courses and lessons]
+      summary: Create a course (UC-02)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The user has no study group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/courses/{courseId}/lessons:
+    parameters:
+      - $ref: "#/components/parameters/courseId"
+    get:
+      tags: [Courses and lessons]
+      summary: List lessons of a course (UC-02)
+      responses:
+        "200":
+          description: Lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Courses and lessons]
+      summary: Create a lesson (UC-02)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/notes:
+    get:
+      tags: [Notes]
+      summary: List notes the user can access (UC-03)
+      parameters:
+        - name: lessonId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NoteSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Notes]
+      summary: Create a note for a lesson (UC-03)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteCreate"
+      responses:
+        "201":
+          description: Created. The author is taken from the session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/notes/{noteId}:
+    parameters:
+      - $ref: "#/components/parameters/noteId"
+    get:
+      tags: [Notes]
+      summary: Get a note (UC-06)
+      responses:
+        "200":
+          description: The note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/lessons/{lessonId}/audio:
+    parameters:
+      - $ref: "#/components/parameters/lessonId"
+    post:
+      tags: [Audio and transcription]
+      summary: Upload a lecture recording and start transcription (UC-04)
+      description: Accepted formats and the size limit are PENDING (D-01). A rejected file creates no records.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Recording saved, transcription job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioUploadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "415":
+          description: Unsupported file format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Upload failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/transcription-jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      tags: [Audio and transcription]
+      summary: Get the state of a transcription job (UC-05)
+      responses:
+        "200":
+          description: The job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptionJob"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/transcriptions/{transcriptionId}:
+    parameters:
+      - name: transcriptionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      tags: [Audio and transcription]
+      summary: Get a finished transcription (UC-05)
+      description: The source of the language value is PENDING (D-06).
+      responses:
+        "200":
+          description: The transcription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transcription"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/audio/{audioRecordingId}/retry:
+    parameters:
+      - name: audioRecordingId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags: [Audio and transcription]
+      summary: Retry a failed transcription without a new upload (PENDING D-02)
+      responses:
+        "201":
+          description: A new job was created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transcriptionJobId:
+                    type: integer
+                    format: int64
+                  status:
+                    type: string
+                    example: Pending
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The last job is not Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notes/{noteId}/blocks:
+    parameters:
+      - $ref: "#/components/parameters/noteId"
+    get:
+      tags: [Blocks]
+      summary: List blocks of a note in order (UC-06)
+      responses:
+        "200":
+          description: Blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Block"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Blocks]
+      summary: Create blocks, for example from a transcription (UC-06)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockCreateRequest"
+      responses:
+        "201":
+          description: Created blocks with their positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Block"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The transcription is not Completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notes/{noteId}/blocks/{blockId}:
+    parameters:
+      - $ref: "#/components/parameters/noteId"
+      - $ref: "#/components/parameters/blockId"
+    put:
+      tags: [Blocks]
+      summary: Edit or highlight a block (UC-07)
+      description: |
+        Requires edit permission. Notifies the author and collaborators except the editor (RN-10).
+        Conflict behavior is PENDING (D-04); until decided, the last version wins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlockUpdate"
+      responses:
+        "200":
+          description: The updated block
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Block"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Edit conflict (PENDING D-04)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/study-group/members:
+    get:
+      tags: [Sharing]
+      summary: List classmates the author can share with (UC-08)
+      responses:
+        "200":
+          description: Members of the user's study group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/notes/{noteId}/collaborators:
+    parameters:
+      - $ref: "#/components/parameters/noteId"
+    get:
+      tags: [Sharing]
+      summary: List collaborators of a note (UC-08)
+      responses:
+        "200":
+          description: Collaborators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Collaborator"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Sharing]
+      summary: Grant access to a classmate (UC-08, author only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollaboratorCreate"
+      responses:
+        "201":
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollaboratorCreate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Access already granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notes/{noteId}/collaborators/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/noteId"
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    delete:
+      tags: [Sharing]
+      summary: Remove a collaborator (UC-08, author only)
+      responses:
+        "204":
+          description: Removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/blocks/{blockId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/blockId"
+    get:
+      tags: [Comments]
+      summary: List comments of a block (UC-09)
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Comments]
+      summary: Comment on a block (UC-09)
+      description: Requires comment or edit permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentCreate"
+      responses:
+        "201":
+          description: Created. The author and date are set by the server.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: List the user's notifications (UC-10)
+      parameters:
+        - name: unreadOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications (an empty list is valid)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all notifications as read (UC-10)
+      responses:
+        "204":
+          description: Done
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/notifications/{id}/read:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    patch:
+      tags: [Notifications]
+      summary: Mark one notification as read (UC-10)
+      responses:
+        "204":
+          description: Done
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    courseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    lessonId:
+      name: lessonId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    noteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    blockId:
+      name: blockId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    BadRequest:
+      description: Invalid data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid session
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: No permission or no access
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Object not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: short message
+
+    StudyGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: ИДБ-24-05
+
+    RegisterRequest:
+      type: object
+      required: [fullName, email, password]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        studyGroupId:
+          type: integer
+          format: int64
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        email:
+          type: string
+        studyGroupId:
+          type: integer
+          format: int64
+          nullable: true
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            fullName:
+              type: string
+            studyGroupId:
+              type: integer
+              format: int64
+              nullable: true
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+
+    CourseCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        courseId:
+          type: integer
+          format: int64
+        topic:
+          type: string
+        lessonDate:
+          type: string
+          format: date
+
+    LessonCreate:
+      type: object
+      required: [topic, lessonDate]
+      properties:
+        topic:
+          type: string
+        lessonDate:
+          type: string
+          format: date
+
+    NoteCreate:
+      type: object
+      required: [lessonId, title]
+      properties:
+        lessonId:
+          type: integer
+          format: int64
+        title:
+          type: string
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        lessonId:
+          type: integer
+          format: int64
+        authorId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    NoteSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        lessonId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        authorId:
+          type: integer
+          format: int64
+        myPermission:
+          type: string
+          enum: [author, read, comment, edit]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AudioUploadResponse:
+      type: object
+      properties:
+        audioRecordingId:
+          type: integer
+          format: int64
+        transcriptionJobId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          example: Pending
+
+    TranscriptionJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        audioRecordingId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [Pending, Completed, Failed]
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        transcriptionId:
+          type: integer
+          format: int64
+          nullable: true
+
+    Transcription:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
+        language:
+          type: string
+          example: ru
+        createdAt:
+          type: string
+          format: date-time
+
+    Block:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        position:
+          type: integer
+        content:
+          type: string
+        isHighlighted:
+          type: boolean
+        changedBy:
+          type: integer
+          format: int64
+          nullable: true
+        changedAt:
+          type: string
+          format: date-time
+
+    BlockCreateRequest:
+      type: object
+      required: [blocks]
+      properties:
+        transcriptionId:
+          type: integer
+          format: int64
+          description: Optional. When given, the transcription must be Completed.
+        blocks:
+          type: array
+          items:
+            type: object
+            required: [content]
+            properties:
+              content:
+                type: string
+
+    BlockUpdate:
+      type: object
+      properties:
+        content:
+          type: string
+        isHighlighted:
+          type: boolean
+
+    Member:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+
+    Collaborator:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        permission:
+          type: string
+          enum: [read, comment, edit]
+
+    CollaboratorCreate:
+      type: object
+      required: [userId, permission]
+      properties:
+        userId:
+          type: integer
+          format: int64
+        permission:
+          type: string
+          enum: [read, comment, edit]
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        authorId:
+          type: integer
+          format: int64
+        authorName:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CommentCreate:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          example: TranscriptionCompleted
+          description: TranscriptionCompleted or NoteEdited (TranscriptionFailed is PENDING D-02)
+        message:
+          type: string
+        noteId:
+          type: integer
+          format: int64
+          nullable: true
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
