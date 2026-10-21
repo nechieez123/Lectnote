@@ -53,19 +53,23 @@ Lectnote/
 - [PostgreSQL](https://www.postgresql.org/download/) or [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Node.js (LTS)](https://nodejs.org/) for the frontend
 
-### Database with Docker
+### Whole project with Docker (database, API and web)
 
 ```
 cp .env.example .env
 ```
 
-Open `.env` and replace `change_me` with a password. Then:
+Open `.env` and replace `change_me` with a password (the `.env` file is never committed). Then:
 
 ```
-docker compose up -d
+docker compose up --build
 ```
 
-The database starts in the container `lectnote-db` and creates the tables from `docs/schema.sql` on the first start. The `api` and `web` services are added to `docker-compose.yml` as those parts are finished.
+This starts three containers: `lectnote-db` (PostgreSQL, creates the tables from `docs/schema.sql` on the first start), `lectnote-api` (ASP.NET Core) and `lectnote-web` (React behind Nginx).
+
+Open `http://localhost:8080`. The API answers at `http://localhost:8080/api/hello`.
+
+To stop the project, run `docker compose down`. To also delete the database data (for example after changing the password in `.env`), run `docker compose down -v`.
 
 ### API without Docker
 

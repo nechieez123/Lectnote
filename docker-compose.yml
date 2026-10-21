@@ -19,8 +19,24 @@ services:
       timeout: 5s
       retries: 10
 
-  # api:  (ASP.NET Core) will be added here
-  # web:  (React behind Nginx) will be added here
+  api:
+    build: ./api/Lectnote.Api
+    container_name: lectnote-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+
+  web:
+    build: ./web
+    container_name: lectnote-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
 
 volumes:
   lectnote_pgdata:
