@@ -72,7 +72,7 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 
 ### RN-04 — Accepted audio files
 
-**Rule:** Only audio files with the formats and size defined by the team are accepted (D-01).
+**Rule:** Only MP3, M4A and WAV files up to 100 MB are accepted (D-01).
 
 **Backend enforces:** validates format and size before saving the file or creating the transcription job.
 
@@ -85,7 +85,7 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 2. A file above the limit is rejected.
 3. A valid file creates both records with status `Pending`.
 
-**PROPOSAL (D-01):** see section 3.
+**Decision (D-01):** see section 3.
 
 ### RN-05 — Transcription job lifecycle
 
@@ -123,17 +123,17 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 
 **Frontend shows:** comment box or edit controls only when permitted; "no permission" message otherwise.
 
-**Errors:** missing permission → `403`; concurrent edit → depends on D-04.
+**Errors:** missing permission → `403`. A concurrent edit is not an error: the last saved version wins (D-04).
 
 **Tests:**
 1. Read permission: cannot comment or edit.
 2. Comment permission: can comment, cannot edit.
 3. Edit permission: can comment and edit.
-4. Concurrent edit behaves as decided in D-04.
+4. Two concurrent edits of the same block: the last saved version wins (D-04).
 
 ### RN-08 — Comments belong to one block
 
-**Rule:** Each comment belongs to exactly one block and stores its author and creation date (D-03).
+**Rule:** Each comment belongs to exactly one block and stores its author and creation date. When a block is deleted, its comments are deleted with it (D-03).
 
 **Backend enforces:** a comment requires a valid block, non-empty text, author from the session, and creation date set by the server.
 
@@ -160,7 +160,7 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 
 ### RN-10 — Notifications
 
-**Rule:** When transcription completes, the author of the recording is notified. When a note is edited, the author and collaborators are notified, except the user who made the change (D-02, D-07).
+**Rule:** When transcription completes or fails, the author of the recording is notified (D-02). When a note is edited, the author and collaborators are notified, except the user who made the change. Notifications are shown in the app only (D-07).
 
 **Backend enforces:** notifications are created by the system on the events above; the recipient list excludes the editor.
 
@@ -170,32 +170,46 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 1. A completed job creates one notification for the recording's author.
 2. An edit by a collaborator notifies the author and the other collaborators, not the editor.
 3. Marking a notification as read changes only that notification.
+4. A failed job creates one notification for the recording's author.
 
-**To update after D-02:** whether failed transcriptions also generate a notification.
+## 3. Decisions
 
-## 3. Decisions for the 16.10 meeting
-
-Fill in the Decision column during the meeting. The proposals only exist to speed up the discussion.
+The team answered a form on 20–21.10 (4 answers). An option with at least 3 of 4 votes is accepted. Ties are decided by the team lead.
 
 | ID | Question | Affects | PROPOSAL | Decision |
 |----|----------|---------|----------|----------|
-| D-01 | Which audio formats are accepted and what is the maximum file size? | RN-04, RF-04 | Accept common formats (e.g. MP3, WAV, M4A) with a limit that fits the transcription service and the 8 GB RAM target (RNF-01). | Pending |
-| D-02 | If transcription fails (`Failed`), is the author notified and can they upload again? | RN-05, RN-10, RF-10 | Notify the author. The model already allows several jobs per recording (`AudioRecording` 1:N `TranscriptionJob`), so a retry may create a new job without a new upload. | Pending |
-| D-03 | If a block is deleted, are its comments deleted or archived? | RN-08, RF-09 | Delete together with the block (simplest). See open issue 1 below first. | Pending |
-| D-04 | If two people edit the same block at once, is the last version saved or is a conflict reported? | RN-07, RF-07 | Last version wins for the MVP, since the ERD has no version attribute. A conflict message would require a new attribute. | Pending |
-| D-05 | Is a shared note visible only to users invited by the author, or to the whole study group? | RN-03, RN-06, RF-08 | Only invited users. This is already what RN-03 and RN-06 imply. | Pending |
-| D-06 | Which languages are supported for transcription? | RN-05, RF-05 | Fix a short list (e.g. Russian and Portuguese) and store the language in `Transcription`. | Pending |
-| D-07 | Are notifications available only in the app or also by e-mail? | RN-10, RF-10, RF-11, RF-12 | In-app only for the MVP. | Pending |
+| D-01 | Which audio formats are accepted and what is the maximum file size? | RN-04, RF-04 | Accept common formats (e.g. MP3, WAV, M4A) with a limit that fits the transcription service and the 8 GB RAM target (RNF-01). | MP3, M4A and WAV, maximum size 100 MB. |
+| D-02 | If transcription fails (`Failed`), is the author notified and can they upload again? | RN-05, RN-10, RF-10 | Notify the author. The model already allows several jobs per recording (`AudioRecording` 1:N `TranscriptionJob`), so a retry may create a new job without a new upload. | Notify the author. A retry creates a new job without a new upload. |
+| D-03 | If a block is deleted, are its comments deleted or archived? | RN-08, RF-09 | Delete together with the block (simplest). See open issue 1 below first. | Delete the comments together with the block. |
+| D-04 | If two people edit the same block at once, is the last version saved or is a conflict reported? | RN-07, RF-07 | Last version wins for the MVP, since the ERD has no version attribute. A conflict message would require a new attribute. | The last saved version wins (MVP). |
+| D-05 | Is a shared note visible only to users invited by the author, or to the whole study group? | RN-03, RN-06, RF-08 | Only invited users. This is already what RN-03 and RN-06 imply. | Only users invited by the author. |
+| D-06 | Which languages are supported for transcription? | RN-05, RF-05 | Fix a short list (e.g. Russian and Portuguese) and store the language in `Transcription`. | Russian, English and French. The language is chosen in the audio upload form. |
+| D-07 | Are notifications available only in the app or also by e-mail? | RN-10, RF-10, RF-11, RF-12 | In-app only for the MVP. | In-app only for the MVP (tie 2:2, decided by the team lead). |
+
+### Votes
+
+| ID | Result (4 answers) |
+|----|--------------------|
+| D-01 formats | MP3 4, M4A 3, WAV 2, OGG 1. WAV got 2 of 4 votes and is accepted by the team lead, because it is a common recording format. |
+| D-01 size | 100 MB: 4 |
+| D-02 | Notify the author and allow a retry without a new upload: 4 |
+| D-03 | Delete with the block: 3, archive: 1 |
+| D-04 | Last saved version wins: 3, conflict message: 1 |
+| D-05 | Only invited users: 3, the whole study group: 1 |
+| D-06 languages | Russian 4, English 4, French 3, Portuguese 2, Spanish 2, Arabic 2, Chinese 1. Languages with fewer than 3 votes are not in the first version and can be added later, because `language` is only a stored value. |
+| D-06 source | Chosen in the upload form: 3, automatic detection: 1 |
+| D-07 | In-app only: 2, in-app and e-mail: 2 (tie). In-app only is decided by the team lead, because e-mail needs an extra mail service. |
+| Deleting notes and blocks | Add a requirement and a use case before v1.0: 4 |
 
 ## 4. Open issues
 
-1. **Deleting is not covered by any use case.** D-03 assumes blocks can be deleted, and RN-06 allows the author to delete a note and remove collaborators, but no RF or UC describes these actions. Under the change control rule (see `requirements.md`), the team must either (a) add the requirement and use case before v1.0, (b) open a model-change request after v1.0, or (c) remove deletion from RN-06 and drop D-03.
-2. **RN-10 wording for failures** must be aligned with D-02 once decided.
-3. **RN-05 and D-06:** `Transcription` has a language attribute, but no use case lets the user choose the language. Decide where the language comes from (upload form, user setting, or automatic detection) when answering D-06.
+1. **Deleting notes and blocks.** The team decided (4 of 4) to add a requirement and a use case before v1.0. To do: add the requirement and the use case for deleting a note, deleting a block, and removing a collaborator, then add the endpoints to the API contracts. Status: open.
+2. **RN-10 wording for failures.** Resolved: a failed transcription notifies the author (D-02).
+3. **Source of the transcription language.** Resolved: the language is chosen in the audio upload form (D-06). UC-04 must include this field.
 
 ## 5. Approval checklist
 
 - [ ] Every rule RN-01 to RN-10 was reviewed by the four members.
 - [ ] Every rule has at least one verification test listed.
-- [ ] Every decision D-01 to D-07 has a recorded answer.
+- [x] Every decision D-01 to D-07 has a recorded answer.
 - [ ] Open issues in section 4 were resolved or explicitly postponed.
