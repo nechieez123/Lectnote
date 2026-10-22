@@ -1,6 +1,6 @@
 # Lectnote — Business Rules and Decisions
 
-> Version: v1.0 (draft) · Owners: Jeovani and Iloka
+> Version: v1.1 (draft) · Owners: Jeovani and Iloka
 
 The backend enforces every rule; the frontend shows its consequences (disabled buttons, error messages, empty states).
 
@@ -19,7 +19,7 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 | RN-03 | Every note has an author; only the author and collaborators with permission can view it | RF-03, RF-06, RF-07, RF-08 | UC-03, UC-06, UC-07, UC-08 | Note, NoteCollaborator | — |
 | RN-04 | Only audio files with the accepted formats and size are allowed | RF-04, RNF-02 | UC-04 | AudioRecording | D-01 |
 | RN-05 | Transcription job goes from Pending to Completed or Failed; Transcription exists only when Completed | RF-05, RNF-02 | UC-05 | TranscriptionJob, Transcription | D-02, D-06 |
-| RN-06 | Only the author can grant access, remove collaborators, or delete the note | RF-08 | UC-08 | Note, NoteCollaborator | D-05 |
+| RN-06 | Only the author can grant access, remove collaborators, or delete the note | RF-08, RF-13 | UC-08, UC-11 | Note, NoteCollaborator | D-05 |
 | RN-07 | Commenting requires comment or edit permission; editing blocks requires edit permission | RF-07, RF-09, RNF-02 | UC-07, UC-09 | NoteCollaborator, NoteBlock, Comment | D-04 |
 | RN-08 | Each comment belongs to exactly one block and stores author and creation date | RF-09 | UC-09 | Comment, NoteBlock | D-03 |
 | RN-09 | Block order is preserved; every edit records who and when | RF-07 | UC-07 | NoteBlock | — |
@@ -117,7 +117,7 @@ Rules that depend on a decision reference it as (D-xx). Items marked PROPOSAL ar
 
 ### RN-07 — Permissions for commenting and editing
 
-**Rule:** Commenting requires comment or edit permission. Editing blocks requires edit permission (D-04).
+**Rule:** Commenting requires comment or edit permission. Editing and deleting blocks require edit permission (D-04).
 
 **Backend enforces:** permission checked on every comment and block-edit request.
 
@@ -203,7 +203,7 @@ The team answered a form on 20–21.10 (4 answers). An option with at least 3 of
 
 ## 4. Open issues
 
-1. **Deleting notes and blocks.** The team decided (4 of 4) to add a requirement and a use case before v1.0. To do: add the requirement and the use case for deleting a note, deleting a block, and removing a collaborator, then add the endpoints to the API contracts. Status: open.
+1. **Deleting notes and blocks.** Resolved: the team decided (4 of 4) to add it before v1.0. RF-13 and UC-11 were added (version v1.1), and the delete endpoints are in the API contracts.
 2. **RN-10 wording for failures.** Resolved: a failed transcription notifies the author (D-02).
 3. **Source of the transcription language.** Resolved: the language is chosen in the audio upload form (D-06). UC-04 must include this field.
 
