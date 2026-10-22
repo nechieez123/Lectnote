@@ -11,8 +11,6 @@ services:
       - "5434:5432"
     volumes:
       - lectnote_pgdata:/var/lib/postgresql/data
-      # creates the tables on the first start only
-      - ./docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -27,16 +25,33 @@ services:
       db:
         condition: service_healthy
     environment:
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Auth__SigningKey: ${AUTH_SIGNING_KEY}
+      OpenAI__ApiKey: ${OPENAI_API_KEY}
+      OpenAI__Model: ${OPENAI_MODEL:-whisper-1}
+      Transcription__DefaultLanguage: ${TRANSCRIPTION_DEFAULT_LANGUAGE:-pt}
+      Uploads__MaxBytes: ${UPLOADS_MAX_BYTES:-104857600}
+    ports:
+      - "5157:8080"
+    volumes:
+      - lectnote_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/hello || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   web:
     build: ./web
     container_name: lectnote-web
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "8080:80"
 
 volumes:
   lectnote_pgdata:
+  lectnote_uploads:
