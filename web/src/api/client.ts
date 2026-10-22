@@ -19,19 +19,12 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (response.status === 204) return undefined as T;
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9715ce5 (feat: integrate frontend with Lectnote API)
+
     if (response.status === 401) {
       setToken(null);
       window.dispatchEvent(new CustomEvent('lectnote:session-expired'));
     }
-<<<<<<< HEAD
-=======
->>>>>>> 937c6a0 (feat: implement complete backend API)
-=======
->>>>>>> 9715ce5 (feat: integrate frontend with Lectnote API)
+
     const message = typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
       ? body.error : response.status === 404 ? 'Endpoint não encontrado no backend. Confirma a implementação da API.' : `Erro da API (${response.status}).`;
     throw new ApiError(message, response.status);
