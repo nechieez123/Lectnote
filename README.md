@@ -65,7 +65,7 @@ Open `.env` and replace `change_me` with a password (the `.env` file is never co
 docker compose up --build
 ```
 
-This starts three containers: `lectnote-db` (PostgreSQL, creates the tables from `docs/schema.sql` on the first start), `lectnote-api` (ASP.NET Core) and `lectnote-web` (React behind Nginx).
+This starts three containers: `lectnote-db` (PostgreSQL), `lectnote-api` (ASP.NET Core) and `lectnote-web` (React behind Nginx). The API applies the EF Core `InitialComplete` migration at startup and persists uploaded audio in the `lectnote_uploads` volume.
 
 Open `http://localhost:8080`. The API answers at `http://localhost:8080/api/hello`.
 
@@ -123,3 +123,7 @@ Figma mockups: link to be added.
 - Changes reach `develop` and `main` only through a pull request reviewed by another team member.
 - Commit messages start with `feat:`, `fix:` or `docs:`.
 - Passwords, keys and `.env` files are never committed.
+
+## Frontend/API integration status
+
+The frontend uses the REST paths defined in `docs/api-contracts.md`; the backend implements the complete contract with PostgreSQL persistence, signed bearer sessions, resource authorization, upload validation, background transcription jobs, sharing, comments and notifications. See [`docs/frontend-integration-audit.md`](docs/frontend-integration-audit.md) for the final decisions and validation status.
