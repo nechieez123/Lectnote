@@ -26,11 +26,6 @@ builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 100 * 
 var app = builder.Build();
 app.UseCors();
 app.Use(async (ctx, next) => { await AuthMiddleware.TrySetUser(ctx, app.Services.GetRequiredService<TokenService>()); await next(); });
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-}
 
 app.MapGet("/api/hello", async (AppDbContext db) => Results.Ok(new { message = "Hello from Lectnote API", studyGroups = await db.StudyGroups.CountAsync() }));
 app.MapGet("/api/study-groups", async (AppDbContext db) => Results.Ok(await db.StudyGroups.AsNoTracking().OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()));
