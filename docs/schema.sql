@@ -4,7 +4,7 @@
 CREATE TABLE study_groups (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE users (
@@ -13,7 +13,7 @@ CREATE TABLE users (
     email          VARCHAR(255) NOT NULL UNIQUE,
     password_hash  VARCHAR(255) NOT NULL,
     study_group_id BIGINT REFERENCES study_groups(id),   -- NULL = user has no group yet (RN-02)
-    created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE courses (
@@ -34,8 +34,8 @@ CREATE TABLE notes (
     lesson_id   BIGINT NOT NULL REFERENCES lessons(id),
     author_id   BIGINT NOT NULL REFERENCES users(id),    -- RN-03: author cannot be null
     title       VARCHAR(255) NOT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE audio_recordings (
@@ -45,7 +45,7 @@ CREATE TABLE audio_recordings (
     file_path     VARCHAR(500) NOT NULL,
     file_format   VARCHAR(10) NOT NULL,                  -- accepted formats: D-01
     size_bytes    BIGINT NOT NULL,
-    uploaded_at   TIMESTAMP NOT NULL DEFAULT NOW()
+    uploaded_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE transcription_jobs (
@@ -54,8 +54,8 @@ CREATE TABLE transcription_jobs (
     status              VARCHAR(20) NOT NULL DEFAULT 'Pending'
                         CHECK (status IN ('Pending', 'Completed', 'Failed')),
     error_message       TEXT,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    finished_at         TIMESTAMP
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at         TIMESTAMPTZ
 );
 
 CREATE TABLE transcriptions (
@@ -63,7 +63,7 @@ CREATE TABLE transcriptions (
     transcription_job_id  BIGINT NOT NULL UNIQUE REFERENCES transcription_jobs(id),  -- only for Completed jobs (RN-05)
     text                  TEXT NOT NULL,
     language              VARCHAR(10) NOT NULL,          -- source of language: D-06
-    created_at            TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE note_blocks (
@@ -73,7 +73,7 @@ CREATE TABLE note_blocks (
     content         TEXT NOT NULL,
     is_highlighted  BOOLEAN NOT NULL DEFAULT FALSE,
     changed_by      BIGINT REFERENCES users(id),
-    changed_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    changed_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (note_id, position)
 );
 
@@ -91,7 +91,7 @@ CREATE TABLE comments (
     note_block_id  BIGINT NOT NULL REFERENCES note_blocks(id) ON DELETE CASCADE,  -- D-03
     author_id      BIGINT NOT NULL REFERENCES users(id),
     text           TEXT NOT NULL CHECK (length(trim(text)) > 0),
-    created_at     TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE notifications (
@@ -101,5 +101,5 @@ CREATE TABLE notifications (
     type        VARCHAR(30) NOT NULL,                    -- e.g. TranscriptionCompleted, NoteEdited
     message     VARCHAR(500) NOT NULL,
     is_read     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
