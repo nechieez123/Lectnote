@@ -18,6 +18,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   api:
     build: ./api/Lectnote.Api
@@ -32,6 +33,7 @@ services:
       Auth__SigningKey: ${AUTH_SIGNING_KEY}
       OpenAI__ApiKey: ${OPENAI_API_KEY}
       OpenAI__Model: ${OPENAI_MODEL:-whisper-1}
+      OpenAI__BaseUrl: ${OPENAI_BASE_URL:-https://api.openai.com/v1/audio/transcriptions}
       Transcription__DefaultLanguage: ${TRANSCRIPTION_DEFAULT_LANGUAGE:-pt}
       Uploads__MaxBytes: ${UPLOADS_MAX_BYTES:-104857600}
     ports:
