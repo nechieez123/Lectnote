@@ -59,13 +59,14 @@ Lectnote/
 cp .env.example .env
 ```
 
-Open `.env` and replace `change_me` with a password (the `.env` file is never committed). Then:
+Open `.env` and replace `change_me` with a password and `change_this_to_a_long_random_secret` with a long random string (for example the output of `openssl rand -hex 32`). The `.env` file is never committed. Then:
 
 ```
 docker compose up --build
 ```
 
-This starts three containers: `lectnote-db` (PostgreSQL), `lectnote-api` (ASP.NET Core) and `lectnote-web` (React behind Nginx). The API applies the EF Core `InitialComplete` migration at startup and persists uploaded audio in the `lectnote_uploads` volume.
+This starts three containers: `lectnote-db` (PostgreSQL), `lectnote-api` (ASP.NET Core) and `lectnote-web` (React behind Nginx). On the first start, PostgreSQL creates all tables from `docs/schema.sql` and the study group ИДБ-24-05 from `docs/seed.sql`. These scripts run only on an empty database volume, so after changing either file run `docker compose down -v` first. Uploaded audio is stored in the `lectnote_uploads` volume. Transcription needs `OPENAI_API_KEY` in `.env`; without it, transcription jobs end as `Failed` and nothing crashes.
+Any OpenAI-compatible transcription endpoint works through OPENAI_BASE_URL, for example Groq’s free tier.
 
 Open `http://localhost:8080`. The API answers at `http://localhost:8080/api/hello`.
 
@@ -82,15 +83,15 @@ dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Da
 
 Use the port of your PostgreSQL server (the default is 5432).
 
-3. Install the EF Core tool once, apply the migration, and start the API:
+3. Create the tables and the seed data, then start the API:
 
 ```
-dotnet tool install --global dotnet-ef --version "9.*"
-dotnet ef database update
+psql -U postgres -d lectnote_dev -f ../../docs/schema.sql
+psql -U postgres -d lectnote_dev -f ../../docs/seed.sql
 dotnet run --urls http://localhost:5000
 ```
 
-4. Open `http://localhost:5000/api/hello`. The answer is `{"message":"Hello from Lectnote API","studyGroups":0}`.
+4. Open `http://localhost:5000/api/hello`. The answer contains `"message":"Hello from Lectnote API"` and the number of study groups (1 after the seed).
 
 ### Frontend
 
@@ -107,15 +108,18 @@ The page opens at `http://localhost:5173` and calls the API at `http://localhost
 | File | Content |
 |------|---------|
 | [docs/requirements.md](docs/requirements.md) | Functional and non-functional requirements |
-| [docs/use-cases.md](docs/use-cases.md) | Use cases UC-01 to UC-10 |
-| [docs/business-rules.md](docs/business-rules.md) | Business rules RN-01 to RN-10 and open decisions |
+| [docs/use-cases.md](docs/use-cases.md) | Use cases UC-01 to UC-11 |
+| [docs/business-rules.md](docs/business-rules.md) | Business rules RN-01 to RN-10 and decisions D-01 to D-07 |
 | [docs/erd.md](docs/erd.md) | ERD (Mermaid); picture in `docs/erd.png` |
-| [docs/schema.sql](docs/schema.sql) | Draft database schema |
+| [docs/schema.sql](docs/schema.sql) | Database schema, loaded automatically by Docker on the first start |
 | [docs/api-contracts.md](docs/api-contracts.md) | API contracts |
+| [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI description of the API (draft v0.2.0) |
+| [docs/roadmap.md](docs/roadmap.md) | Work plan up to the 3rd lab |
+| [docs/frontend-integration-audit.md](docs/frontend-integration-audit.md) | Frontend/API integration audit |
 | [docs/git-guide.md](docs/git-guide.md) | How to work with Git in this project |
 | [docs/tasks/](docs/tasks/) | Task documents for each team member |
 
-Figma mockups: link to be added.
+Figma mockups: [Lectnote — UI Design & Wireframes](https://www.figma.com/design/MVDtf51H4lkLksPf8epkpI/Lectnote-%E2%80%94-UI-Design---Wireframes)
 
 ## Working rules
 
@@ -126,4 +130,4 @@ Figma mockups: link to be added.
 
 ## Frontend/API integration status
 
-The frontend uses the REST paths defined in `docs/api-contracts.md`; the backend implements the complete contract with PostgreSQL persistence, signed bearer sessions, resource authorization, upload validation, background transcription jobs, sharing, comments and notifications. See [`docs/frontend-integration-audit.md`](docs/frontend-integration-audit.md) for the final decisions and validation status.
+The frontend uses the REST paths defined in `docs/api-contracts.md`, and the backend implements the main part of the contract with PostgreSQL persistence, signed bearer sessions, resource authorization, background transcription jobs, sharing, comments and notifications. Known gaps, planned for the next stage: only MP3, M4A and WAV should be accepted (D-01), the language should be chosen in the upload form (D-06), a failed transcription should notify the author (D-02), and the delete endpoints for notes and blocks (UC-11) are missing. See [`docs/frontend-integration-audit.md`](docs/frontend-integration-audit.md) for the integration history.
