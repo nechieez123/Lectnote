@@ -1,6 +1,6 @@
 # Lectnote — Requirements
 
-> Version: v1.0 (draft) · Owner: Jeovani
+> Version: v1.1 (draft) · Owner: Jeovani
 
 ## 1. Change control
 
@@ -27,15 +27,16 @@ If a matching ID does not exist in the approved model, the element is **not** cr
 | RF-01 | The student registers, logs in, and logs out. | UC-01 | User, StudyGroup | RN-01 |
 | RF-02 | The student creates and views the courses and lessons of their study group. | UC-02 | Course, Lesson, StudyGroup | RN-02 |
 | RF-03 | The student creates a note linked to a lesson. | UC-03 | Note, Lesson, User | RN-03 |
-| RF-04 | The student uploads an audio recording of a lesson. | UC-04 | AudioRecording, Lesson, User | RN-04 |
+| RF-04 | The student uploads an audio recording of a lesson and chooses its language. | UC-04 | AudioRecording, Lesson, User | RN-04 |
 | RF-05 | The system transcribes the audio and stores the processing state. | UC-05 | TranscriptionJob, Transcription, AudioRecording | RN-05 |
 | RF-06 | The student views the transcription and organizes it into text blocks. | UC-06 | Transcription, Note, NoteBlock | RN-03 |
 | RF-07 | The student edits blocks and highlights important concepts. | UC-07 | NoteBlock, Note | RN-03, RN-07, RN-09 |
 | RF-08 | The author shares a note with classmates and sets access permissions. | UC-08 | Note, NoteCollaborator, User | RN-03, RN-06 |
 | RF-09 | A classmate leaves a comment on a specific block of a note. | UC-09 | Comment, NoteBlock, User | RN-07, RN-08 |
-| RF-10 | The system sends a notification when transcription finishes. Notification on transcription failure depends on D-02. | UC-05, UC-10 | Notification, TranscriptionJob | RN-10 |
+| RF-10 | The system sends a notification when transcription finishes. The author is also notified when transcription fails (D-02). | UC-05, UC-10 | Notification, TranscriptionJob | RN-10 |
 | RF-11 | The system notifies when a classmate edits a note. | UC-07, UC-10 | Notification, Note | RN-10 |
 | RF-12 | The student views notifications and marks them as read. | UC-10 | Notification | RN-10 |
+| RF-13 | The author deletes a note or removes a collaborator. A user with edit permission deletes a block. | UC-11 | Note, NoteBlock, Comment, NoteCollaborator | RN-06, RN-07, RN-08 |
 
 ## 4. Non-functional requirements
 
@@ -44,23 +45,24 @@ If a matching ID does not exist in the approved model, the element is **not** cr
 | RNF-01 | The application starts with `docker compose up` on a laptop with 8 GB of RAM. | — | — | — |
 | RNF-02 | For expected errors (invalid audio, transcription failure, missing permission), a clear message is displayed. | UC-04, UC-05, UC-08 | — | RN-04, RN-05, RN-07 |
 
-## 5. Open decisions affecting requirements
+## 5. Decisions affecting requirements
 
-To be decided at the 16.10 meeting and recorded in `business-rules.md`.
+Decided by the team vote on 20–21.10. The results are in `business-rules.md`.
 
-| Decision | Affected requirements |
-|----------|-----------------------|
-| D-01 Accepted audio formats and maximum file size | RF-04, RNF-02 |
-| D-02 On transcription failure: is the author notified? Can they re-upload? | RF-05, RF-10, RNF-02 |
-| D-03 When a block is deleted: are its comments deleted or archived? | RF-09 |
-| D-04 Simultaneous edits to the same block: last write wins or conflict warning? | RF-07 |
-| D-05 Shared note: visible only to invited users or to the whole study group? | RF-08 |
-| D-06 Transcription languages (Russian, Portuguese, others) | RF-05 |
-| D-07 Notifications in-app only or also by e-mail? | RF-10, RF-11, RF-12 |
+| Decision | Result | Affected requirements |
+|----------|--------|-----------------------|
+| D-01 Audio formats and maximum size | MP3, M4A, WAV; 100 MB | RF-04, RNF-02 |
+| D-02 Failed transcription | The author is notified and can retry without a new upload | RF-05, RF-10, RNF-02 |
+| D-03 Deleted block | Its comments are deleted with it | RF-09, RF-13 |
+| D-04 Simultaneous edits | The last saved version wins | RF-07 |
+| D-05 Visibility of a shared note | Only users invited by the author | RF-08 |
+| D-06 Transcription languages | Russian, English, French; chosen in the upload form | RF-04, RF-05 |
+| D-07 Notification channels | In-app only | RF-10, RF-11, RF-12 |
+| Deleting notes and blocks | Added as RF-13 and UC-11 (version v1.1) | RF-13 |
 
 ## 6. Approval checklist
 
 - [ ] Every RF has at least one UC.
 - [ ] Every UC uses only entities present in the ERD.
 - [ ] Every entity serves at least one requirement.
-- [ ] Every decision D-01 to D-07 has a recorded answer.
+- [x] Every decision D-01 to D-07 has a recorded answer.

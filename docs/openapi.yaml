@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: Lectnote API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Draft contracts for the Lectnote REST API (see docs/api-contracts.md).
-    Endpoints marked PENDING depend on a decision (D-xx) from docs/business-rules.md.
+    The decisions D-01 to D-07 from docs/business-rules.md are applied.
 servers:
   - url: http://localhost:5000
     description: Local development
@@ -271,24 +271,41 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    delete:
+      tags: [Notes]
+      summary: Delete a note (UC-11, author only)
+      description: Deletes the note together with its blocks, comments, collaborators and notifications.
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/lessons/{lessonId}/audio:
     parameters:
       - $ref: "#/components/parameters/lessonId"
     post:
       tags: [Audio and transcription]
       summary: Upload a lecture recording and start transcription (UC-04)
-      description: Accepted formats and the size limit are PENDING (D-01). A rejected file creates no records.
+      description: Accepted formats are MP3, M4A and WAV; the maximum size is 100 MB (D-01). A rejected file creates no records.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [file]
+              required: [file, language]
               properties:
                 file:
                   type: string
                   format: binary
+                language:
+                  type: string
+                  enum: [ru, en, fr]
       responses:
         "201":
           description: Recording saved, transcription job created
@@ -298,6 +315,8 @@ paths:
                 $ref: "#/components/schemas/AudioUploadResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -355,7 +374,7 @@ paths:
     get:
       tags: [Audio and transcription]
       summary: Get a finished transcription (UC-05)
-      description: The source of the language value is PENDING (D-06).
+      description: The language is the one chosen at upload (D-06).
       responses:
         "200":
           description: The transcription
@@ -380,7 +399,7 @@ paths:
           format: int64
     post:
       tags: [Audio and transcription]
-      summary: Retry a failed transcription without a new upload (PENDING D-02)
+      summary: Retry a failed transcription without a new upload (D-02)
       responses:
         "201":
           description: A new job was created
@@ -467,7 +486,7 @@ paths:
       summary: Edit or highlight a block (UC-07)
       description: |
         Requires edit permission. Notifies the author and collaborators except the editor (RN-10).
-        Conflict behavior is PENDING (D-04); until decided, the last version wins.
+        When two people edit the same block, the last saved version wins (D-04).
       requestBody:
         required: true
         content:
@@ -487,12 +506,20 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          description: Edit conflict (PENDING D-04)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: [Blocks]
+      summary: Delete a block (UC-11)
+      description: Requires edit permission. The comments of the block are deleted with it (D-03).
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/study-group/members:
     get:
@@ -1080,7 +1107,7 @@ components:
         type:
           type: string
           example: TranscriptionCompleted
-          description: TranscriptionCompleted or NoteEdited (TranscriptionFailed is PENDING D-02)
+          description: TranscriptionCompleted, TranscriptionFailed or NoteEdited
         message:
           type: string
         noteId:

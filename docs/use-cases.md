@@ -1,9 +1,9 @@
 # Lectnote — Use Cases
 
-> Version: v1.0 (draft) · Owner: Jeovani
+> Version: v1.1 (draft) · Owner: Jeovani
 
 The errors and alternatives below define the **error states of the screens** (frontend) and the **API error responses** (backend).
-Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
+Items marked **(D-xx)** refer to a decision recorded in `business-rules.md`.
 
 ## Overview
 
@@ -19,6 +19,7 @@ Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
 | UC-08 | Author | Share a note | RF-08, RNF-02 |
 | UC-09 | Collaborator | Comment on a block | RF-09 |
 | UC-10 | Student | View notifications | RF-10, RF-11, RF-12 |
+| UC-11 | Author or Collaborator | Delete a note, a block, or a collaborator | RF-13, RNF-02 |
 
 ---
 
@@ -88,18 +89,18 @@ Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
 - **Actor:** Author
 - **Requirements:** RF-04, RNF-02
 - **Entities:** AudioRecording, Lesson, User
-- **Rules:** RN-04 (D-01)
+- **Rules:** RN-04 (D-01), RN-05 (D-06)
 - **Precondition:** authenticated student; existing lesson.
 - **Postcondition:** file saved and a transcription job created with status `Pending`.
 
 **Main scenario**
-1. The author selects the file and the lesson.
+1. The author selects the file, the lesson, and the language of the recording (Russian, English, or French).
 2. The system validates format and size.
 3. The system saves the file and creates the transcription job (`TranscriptionJob`, `Pending`).
 
 **Alternatives and errors**
-- **E1 —** Unsupported format (D-01).
-- **E2 —** File too large (D-01).
+- **E1 —** Unsupported format (only MP3, M4A, and WAV are accepted).
+- **E2 —** File too large (the limit is 100 MB).
 - **E3 —** Upload failure.
 
 ---
@@ -120,7 +121,7 @@ Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
 4. The system notifies the author of the recording.
 
 **Alternatives and errors**
-- **E1 — Processing failure:** the status becomes `Failed`, with an error message. Whether the author is notified and whether they can re-upload the file is decided in **(D-02)**. Once decided, RN-10 must be updated accordingly.
+- **E1 — Processing failure:** the status becomes `Failed`, with an error message, and the author is notified (D-02). The author can retry without uploading the file again.
 
 ---
 
@@ -159,7 +160,7 @@ Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
 
 **Alternatives and errors**
 - **E1 —** No edit permission.
-- **E2 —** Another user changed the same block at the same time: last version wins or a conflict warning is shown **(D-04)**.
+- **E2 —** Another user changed the same block at the same time: the last saved version wins (D-04).
 
 ---
 
@@ -220,3 +221,25 @@ Items marked **(D-xx)** depend on a decision at the 16.10 meeting.
 
 **Alternatives and errors**
 - **E1 —** Empty list.
+
+---
+
+## UC-11 — Delete a note, a block, or a collaborator
+
+- **Actor:** Author (note, collaborator) or Collaborator with edit permission (block)
+- **Requirements:** RF-13, RNF-02
+- **Entities:** Note, NoteBlock, Comment, NoteCollaborator, Notification
+- **Rules:** RN-06, RN-07, RN-08 (D-03)
+- **Precondition:** the requester is the author of the note (to delete the note or remove a collaborator), or has edit permission on the note (to delete a block).
+- **Postcondition:** the selected object is deleted together with its dependent records. Deleting a note also deletes its blocks, comments, collaborators, and notifications about it. Deleting a block deletes its comments (D-03). Audio recordings and transcriptions of the lesson are kept.
+
+**Main scenario**
+1. The user selects a note, a block, or a collaborator to delete.
+2. The system asks for confirmation.
+3. The user confirms.
+4. The system deletes the object and its dependent records.
+
+**Alternatives and errors**
+- **E1 —** The user cancels at the confirmation step: nothing is deleted.
+- **E2 —** The request does not come from the author (note, collaborator) or the user has no edit permission (block).
+- **E3 —** The object does not exist.

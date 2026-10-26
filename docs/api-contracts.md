@@ -1,8 +1,8 @@
 # Lectnote — API Contracts
 
-> Version: v0.1 (draft) · Owners: Iloka and Jeovani
+> Version: v0.2 (draft) · Owners: Iloka and Jeovani
 
-Draft contracts for the Lectnote REST API. Every endpoint is tied to a use case (UC) and its business rules (RN). Items marked **PENDING** depend on a decision (D-xx) from `business-rules.md`.
+Draft contracts for the Lectnote REST API. Every endpoint is tied to a use case (UC) and its business rules (RN). The decisions D-01 to D-07 from `business-rules.md` are applied (see section 11).
 
 ## 1. Conventions
 
@@ -94,13 +94,19 @@ Notes the user can access (own and shared). Optional filter: `?lessonId=3`.
 - **200:** `{ "id": 10, "lessonId": 3, "title": "Lecture 5", "authorId": 7, "myPermission": "author", "createdAt": "...", "updatedAt": "..." }`
 - **Errors:** 403 no access · 404 not found
 
+### DELETE /api/notes/{noteId}
+Author only (UC-11, RN-06).
+
+- **204:** the note is deleted together with its blocks, comments, collaborators and notifications
+- **Errors:** 401 · 403 not the author · 404 not found
+
 ## 6. Audio and transcription (UC-04, UC-05, RN-04, RN-05)
 
 ### POST /api/lessons/{lessonId}/audio
-- **Request:** `multipart/form-data`, field `file`
+- **Request:** `multipart/form-data`, fields `file` and `language` (`ru`, `en` or `fr`)
 - **201:** `{ "audioRecordingId": 4, "transcriptionJobId": 9, "status": "Pending" }`
-- **Errors:** 404 lesson not found · 413 file too large · 415 unsupported format · 500 upload failure
-- **Note:** accepted formats and the size limit come from **D-01 (PENDING)**. A rejected file creates no records.
+- **Errors:** 400 missing or unsupported language · 404 lesson not found · 413 file too large · 415 unsupported format · 500 upload failure
+- **Note:** accepted formats are MP3, M4A and WAV; the maximum size is 100 MB (D-01). A rejected file creates no records.
 
 ### GET /api/transcription-jobs/{jobId}
 Used by the frontend to show the processing state.
@@ -112,9 +118,9 @@ Used by the frontend to show the processing state.
 ### GET /api/transcriptions/{transcriptionId}
 - **200:** `{ "id": 5, "text": "...", "language": "ru", "createdAt": "..." }`
 - **Errors:** 403 no access · 404 not found
-- **Note:** where `language` comes from is **D-06 (PENDING)**.
+- **Note:** the language is the one chosen at upload (D-06).
 
-### POST /api/audio/{audioRecordingId}/retry — PENDING (D-02)
+### POST /api/audio/{audioRecordingId}/retry (D-02)
 Creates a new transcription job for a recording whose last job is `Failed`, without a new upload.
 
 - **201:** `{ "transcriptionJobId": 12, "status": "Pending" }`
@@ -139,8 +145,15 @@ Creates blocks, for example from a transcription split into parts.
 ### PUT /api/notes/{noteId}/blocks/{blockId}
 - **Request:** `{ "content": "new text", "isHighlighted": true }` (both fields optional)
 - **200:** the updated block (`changedBy` and `changedAt` set by the server)
-- **Errors:** 403 no edit permission · 404 not found · 409 edit conflict (**PENDING D-04**, last version wins unless decided otherwise)
+- **Errors:** 403 no edit permission · 404 not found
+- **Note:** when two people edit the same block, the last saved version wins (D-04).
 - **Side effect:** notifications for the author and collaborators, except the editor (RN-10).
+
+### DELETE /api/notes/{noteId}/blocks/{blockId}
+Requires edit permission (UC-11, RN-07). The comments of the block are deleted with it (D-03).
+
+- **204**
+- **Errors:** 401 · 403 no edit permission · 404 not found
 
 ## 8. Sharing (UC-08, RN-06)
 
@@ -179,7 +192,7 @@ Classmates the author can share with.
 Optional filter: `?unreadOnly=true`.
 
 - **200:** `[ { "id": 50, "type": "TranscriptionCompleted", "message": "...", "noteId": 10, "isRead": false, "createdAt": "..." } ]`
-- `type` is `TranscriptionCompleted` or `NoteEdited` (and possibly `TranscriptionFailed`, **PENDING D-02**).
+- `type` is `TranscriptionCompleted`, `TranscriptionFailed` or `NoteEdited`.
 - An empty list is a valid answer.
 
 ### PATCH /api/notifications/{id}/read
@@ -189,13 +202,14 @@ Optional filter: `?unreadOnly=true`.
 ### PATCH /api/notifications/read-all
 - **204**
 
-## 11. Pending decisions
+## 11. Applied decisions
 
 | Decision | Effect on the contracts |
 |----------|-------------------------|
-| D-01 | Accepted audio formats and maximum size (`POST /api/lessons/{lessonId}/audio`) |
-| D-02 | Failure notification and the retry endpoint |
-| D-03 | Deleting blocks and what happens to comments (no delete endpoint for blocks yet) |
-| D-04 | Edit conflict behavior on `PUT .../blocks/{blockId}` |
-| D-06 | Source of `language` in transcriptions |
-| Open issue 1 | Deleting notes: no endpoint until a requirement and use case are added |
+| D-01 | `POST /api/lessons/{lessonId}/audio` accepts MP3, M4A and WAV, up to 100 MB |
+| D-02 | A failed transcription notifies the author (`TranscriptionFailed`); the retry endpoint is part of the API |
+| D-03 | `DELETE .../blocks/{blockId}` also deletes the block's comments |
+| D-04 | `PUT .../blocks/{blockId}`: the last saved version wins, there is no 409 conflict |
+| D-06 | The audio upload has a `language` field (`ru`, `en`, `fr`) |
+| D-07 | Notifications are in-app only, so there are no e-mail settings |
+| Deleting | `DELETE /api/notes/{noteId}` and `DELETE .../blocks/{blockId}` were added (RF-13, UC-11) |
